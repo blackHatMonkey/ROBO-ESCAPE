@@ -71,141 +71,41 @@ module lab_6_3
 
 	// Put your code here. Your code should produce signals x,y,colour and writeEn/plot
 	// for the VGA controller, in addition to any other functionality your design may require.
-	
+
 	reg [15:0] counter;
-	reg [7:0] x_reg, y_reg;
+	reg [7:0] x_cord, y_cord;
 	reg [2:0] col;
 	reg [7:0] position;
-	wire slow_clock_var;
-	
-	slow_clock sc(CLOCK_50, slow_clock_var);
-	
-	initial
-	begin
-		x_reg = 8'b1;
-		y_reg = 8'b00000001;
-		position = 8'd10;
-	end
-	
-	always @ (posedge CLOCK_50) 
-	begin
-	
-		/*if (counter[15:8] == 8'd50 && (counter[7:0] >= 8'd30 && counter[7:0] >= 8'd50))
-		begin 
-			col = 3'b000;
-			counter[7:0] = counter[7:0] + 1'b1;
-		end*/
-		if(SW[0] == 1'b1)
-			begin 
-			position = 8'd50;
-			end
-		else
-			begin 
-			position = 8'd80;
-			counter = 8'b0;
-			end
+
+	// TODO change these values
+	localparam  max_x = 1, max_y = 1;
+
+	always @ (posedge CLOCK_50)
+		begin
+			if (x_cord == max_x)
+				begin
+					x_cord = 8'b0;
+					y_cord = y_cord + 1;
+				end
+			else
+				begin
+					x_cord = x_cord + 1;
+				end
+
+			if (y_cord == max_y)
+				begin
+					y_cord = 8'b0;
+				end
+		end
 
 
-		if ((counter[7:0] == position) && (counter[15:8] <= 8'd84 && counter[15:8] >= 8'd80))
-			begin
-			col = 3'b010;
-			end
-		else if ((counter[15:8] == 8'd50) && (counter[7:0] <= 8'd80 && counter[7:0] >= 8'd30))
-			begin
-			col = 3'b111;
-			end
-		else
-			begin
-			col = 3'b000;
-			end
-		
-		if (counter[15:8] < 8'd119 && counter[7:0] < 8'd159)
-			begin
-			counter[7:0] = counter[7:0] + 1'b1;
-			end
-		else if (counter[15:8] < 8'd119 && counter[7:0] >= 8'd159)
-			begin
-			counter[7:0] = 8'b0;
-			counter[15:8] = counter[15:8] + 1'b1;
-			end
-		else if (counter[15:8] >= 8'd119 && counter[7:0] >= 8'd159)
-			begin
-			counter = 8'b0;
-			end
-		x_reg = counter[7:0];
-		y_reg = counter[15:8];
-	
-		
-	end
-	hex_displayer h0(position[3:0],HEX0);
-	hex_displayer h1(position[7:4],HEX1);
-	
-	/*always @ (SW[0])
-	begin
-		position = position + 8'd5;
-	end*/
-	
-	assign x = x_reg;
-	assign y = y_reg;
+	assign x = x_cord;
+	assign y = y_cord;
 	assign writeEn = 1'b1;
 	assign colour = col;
-	
+
 endmodule
 
-module hex_displayer(input_values, out);
+module draw ();
 
-    // assign input and ouput
-    input [3:0]input_values;
-    output reg [6:0] out;
-
-    // run this on any change
-    always @(*)
-    begin
-        // in case any of the input change, change the output as well
-        case(input_values[3:0])
-            4'h0: out = 7'b1000000;
-            4'h1: out = 7'b1111001;
-            4'h2: out = 7'b0100100;
-            4'h3: out = 7'b0110000;
-            4'h4: out = 7'b0011001;
-            4'h5: out = 7'b0010010;
-            4'h6: out = 7'b0000010;
-            4'h7: out = 7'b1111000;
-            4'h8: out = 7'b0000000;
-            4'h9: out = 7'b0011000;
-            4'hA: out = 7'b0001000;
-            4'hB: out = 7'b0000011;
-            4'hC: out = 7'b1000110;
-            4'hD: out = 7'b0100001;
-            4'hE: out = 7'b0000110;
-            4'hF: out = 7'b0001110;
-            default: out = 7'b1000000;
-
-
-        endcase
-    end
-endmodule
-
-
-module slow_clock(clock, out);
-
-	input clock;
-	output out;
-	
-	reg [20:0] counter;
-	
-	initial
-	begin
-		counter = 21'b0;
-	end
-	
-
-	always @(clock)
-	begin
-	
-	if (counter == 21'b1001100010010110100000) counter = 21'b0;
-	else counter = counter + 1'b1;
-	
-	end
-	
 endmodule
