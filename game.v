@@ -3,10 +3,6 @@ module game
 	(
 		CLOCK_50,						//	On Board 50 MHz
     KEY,
-    SW,
-	 LEDR,
-	 GPIO,
-	 OTG_DATA,
 		// The ports below are for the VGA output.  Do not change.
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
@@ -22,11 +18,7 @@ module game
 
 	input			CLOCK_50;				//	50 MHz
 	// TODO remove these after testing
-	input   [9:0]   SW;
 	input   [3:0]   KEY;
-	input [6:0] OTG_DATA;
-	input [10:0] GPIO;
-	output [10:0] LEDR;
 
 	// Do not change the following outputs
 	output			VGA_CLK;   				//	VGA Clock
@@ -73,10 +65,10 @@ module game
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 
-	draw d(x, y, colour, CLOCK_50, 10'd320, 10'd240);
+	draw d(x, y, colour, CLOCK_50, 10'd320, 10'd240, !KEY[3:0]);
 	reg [0:0] a, b, c, d2;
 	wire a1, b1, c1, d1;
-	
+
 	always @ (*)
 		begin
 			if (OTG_DATA[0] == 1'b1) a = 1'b1;
@@ -87,7 +79,7 @@ module game
 
 			if (OTG_DATA[2] == 1'b1) c = 1'b1;
 			else c = 1'b0;
-			
+
 			if (OTG_DATA[3] == 1'b1) d2 = 1'b1;
 			else d2 = 1'b0;
 		end
@@ -101,14 +93,15 @@ module game
 	assign LEDR[1] = b1;
 	assign LEDR[2] = c1;
 	assign LEDR[3] = d1;
-	
+
 
 endmodule
 
-module draw (x_out, y_out, colour_out, clock, max_x, max_y);
+module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 
 	input clock;
 	input [9:0] max_x, max_y;
+	input [3:0] key;
 
 	output [9:0] x_out, y_out;
 	output [2:0] colour_out;
@@ -118,20 +111,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y);
 
 	reg [9:0] x_cord, y_cord;
 	reg [2:0] colour;
-	reg [9:0] position, y_position;
-	reg [9:0] h0_start, h0_end, h0_y, h1_start, h1_end, h1_y, b0_start, b0_end, b0_y, b1_start,
-						b1_end, b1_y, b2_start, b2_end, b2_y;
-
-	reg [9:0] ghost_l1_start, ghost_l1_end, ghost_l1_y,
-						ghost_l2_start,	ghost_l2_end, ghost_l2_y,
-						ghost_l3_start, ghost_l3_end, ghost_l3_y,
-						ghost_l4_start, ghost_l4_end, ghost_l4_y,
-						ghost_l5_start, ghost_l5_end, ghost_l5_y,
-						ghost_l6_start, ghost_l6_end, ghost_l6_y,
-						ghost_l7_start, ghost_l7_end, ghost_l7_y,
-						ghost_l8_start, ghost_l8_end, ghost_l8_y,
-						ghost_l9_start, ghost_l9_end, ghost_l9_y,
-						ghost_l10_start, ghost_l10_end, ghost_l10_y;
+	reg [9:0] character_x_position, character_y_position;
 
 	wire new_clock;
 
@@ -139,9 +119,8 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y);
 
 	initial
 		begin
-			position = 10'd0;
-			y_position = 10'd205;
-			
+			character_x_position = 10'd0;
+			character_y_position = 10'd205;
 		end
 
 		localparam platform_1_x_start = 10'd60, platform_1_x_end = 10'd100, platform_1_y = 10'd180,
@@ -149,73 +128,15 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y);
 							 platform_3_x_start = 10'd100, platform_3_x_end = 10'd140, platform_3_y = 10'd120,
 							 platform_4_x_start = 10'd180, platform_4_x_end = 10'd220, platform_4_y = 10'd120,
 							 platform_5_x_start = 10'd140, platform_5_x_end = 10'd180, platform_5_y = 10'd60,
-							 flag_pole_y_start = 10'd39, flag_pole_y_end = 10'd59, flag_pole_x = 10'd160,
-							 flag1_x_start = 10'd161, flag1_x_end = 10'd181, flag1_y = 10'd39,
-							 flag2_x_start = 10'd161, flag2_x_end = 10'd181, flag2_y = 10'd40,
-							 grave_part1_y_start = 10'd169, grave_part1_y_end = 10'd179, grave_part1_x = 10'd245,
-							 grave_part2_y_start = 10'd169, grave_part2_y_end = 10'd179, grave_part2_x = 10'd244,
-							 grave_part3_x_start = 10'd241, grave_part3_x_end = 10'd249, grave_part3_y = 10'd169,
-							 grave_part4_x_start = 10'd241, grave_part4_x_end = 10'd249, grave_part4_y = 10'd170,
+							 grave_y = 10'd169, grave_length = 8, grave_x = 10'd245, grave_width = 6,
 							 grass_y_start = 10'd234, grass_y_end = 10'd239,
 							 sacred_tree_x_start = 10'd15, sacred_tree_x_end = 10'd45;
-							 
-							
+
+
 	always @ (posedge clock)
 		begin
 			// set the background colour to black
 			colour = 3'b001;
-
-
-			// character positioning
-			b1_start = position - 12;
-			b1_end = position + 12;
-			b1_y = 10'd210;
-			b0_start = b1_start;
-			b0_end = b1_end;
-			b0_y = b1_y - 1;
-			b2_start = b1_start;
-			b2_end = b1_end;
-			b2_y = b1_y + 1;
-			h1_start = position - 6;
-			h1_end = position + 6;
-			h1_y = b0_y - 1;
-			h0_start = h1_start;
-			h0_end = h1_end;
-			h0_y = h1_y - 1;
-
-
-			// ghost positioning
-			/*ghost_l1_start = ghost_x_position - 1;
-			ghost_l1_end = ghost_x_position + 1;
-			ghost_l1_y = ghost_l2_y - 1;
-			ghost_l2_start = ghost_x_position - 1;
-			ghost_l2_end = ghost_x_position + 1;
-			ghost_l2_y = ghost_l3_y - 1;
-			ghost_l3_start = ghost_x_position - 2;
-			ghost_l3_end = ghost_x_position + 2;
-			ghost_l3_y = ghost_l4_y - 1;
-			ghost_l4_start = ghost_x_position - 3;
-			ghost_l4_end = ghost_x_position + 3;
-			ghost_l4_y = ghost_l5_y - 1;
-			ghost_l5_start = ghost_x_position - 5;
-			ghost_l5_end = ghost_x_position + 5;
-			ghost_l5_y = 10'd180;
-			ghost_l6_start = ghost_l5_start;
-			ghost_l6_end = ghost_l5_end;
-			ghost_l6_y = ghost_l5_y + 1;
-			ghost_l7_start = ghost_l5_start;
-			ghost_l7_end = ghost_l5_end;
-			ghost_l7_y = ghost_l6_y + 1;
-			ghost_l8_start = ghost_l5_start;
-			ghost_l8_end = ghost_l5_end;
-			ghost_l8_y = ghost_l7_y + 1;
-			ghost_l9_start = ghost_l5_start;
-			ghost_l9_end = ghost_l5_end;
-			ghost_l9_y = ghost_l8_y + 1;
-			ghost_l10_start = ghost_l5_start;
-			ghost_l10_end = ghost_l5_end;
-			ghost_l10_y = ghost_l9_y + 1;*/
-
 
 			// if we have reached the maximum x cordinate move to the next row otherwise move to the
 			// next pixel
@@ -241,187 +162,144 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y);
 					colour = 3'b111;
 				end
 
+			// draw platform 2
+			if (y_cord == platform_2_y && (x_cord >= platform_2_x_start && x_cord <= platform_2_x_end))
+				begin
+					colour = 3'b111;
+				end
 
-				// draw platform 2
-				if (y_cord == platform_2_y && (x_cord >= platform_2_x_start && x_cord <= platform_2_x_end))
-					begin
-						colour = 3'b111;
-					end
+			// draw platform 3
+			if (y_cord == platform_3_y && (x_cord >= platform_3_x_start && x_cord <= platform_3_x_end))
+				begin
+					colour = 3'b111;
+				end
 
-				// draw platform 3
-				if (y_cord == platform_3_y && (x_cord >= platform_3_x_start && x_cord <= platform_3_x_end))
-					begin
-						colour = 3'b111;
-					end
+			// draw platform 4
+			if (y_cord == platform_4_y && (x_cord >= platform_4_x_start && x_cord <= platform_4_x_end))
+				begin
+					colour = 3'b111;
+				end
 
-				// draw platform 4
-				if (y_cord == platform_4_y && (x_cord >= platform_4_x_start && x_cord <= platform_4_x_end))
-					begin
-						colour = 3'b111;
-					end
+			// draw platform 5
+			if (y_cord == platform_5_y && (x_cord >= platform_5_x_start && x_cord <= platform_5_x_end))
+				begin
+					colour = 3'b111;
+				end
 
-				// draw platform 5
-				if (y_cord == platform_5_y && (x_cord >= platform_5_x_start && x_cord <= platform_5_x_end))
-					begin
-						colour = 3'b111;
-					end
+			// draw the grass
+			if (x_cord % 2 == 0 && (y_cord >= grass_y_start && y_cord <= grass_y_end))
+				begin
+					colour = 3'b010;
+				end
 
-				// draw the grass
-				if (x_cord % 2 == 0 && (y_cord >= grass_y_start && y_cord <= grass_y_end))
-					begin
-						colour = 3'b010;
-					end
+			// draw the tree
+			if (x_cord >= sacred_tree_x_start && x_cord <= sacred_tree_x_end)
+				begin
+					colour = 3'b111;
+				end
 
-				// draw the tree
-				if (x_cord >= sacred_tree_x_start && x_cord <= sacred_tree_x_end)
-					begin
-						colour = 3'b111;
-					end
-				
-				/*if ((x_cord >= position && x_cord <= (position + 5)) && (y_cord <= y_position + 5 && y_cord >= y_position))
-					begin
-						colour = 3'b000;
-					end*/
-					
-				
-				if ((((position - x_cord) * (position - x_cord) + (y_position - y_cord) * (y_position - y_cord)) <= 100) &&
-					 (((position - x_cord) * (position - x_cord) + (y_position - y_cord) * (y_position - y_cord)) >= 20))	
-					begin
-						colour = 3'b000;
-					end
-				
-				
-				/*if (x_cord >= (position - 3) && x_cord <= (position - 1) && (y_cord <= (y_position + 5) && y_cord >= y_position))
-					begin
-						colour = 3'b000;
-					end
-				
-				
-				if (x_cord >= (position + 6) && x_cord <= (position + 8) && (y_cord <= y_position + 5 && y_cord >= y_position))
-					begin
-						colour = 3'b000;
-					end
-					
-				if (x_cord >= position && x_cord <= (position + 1) && (y_cord <= y_position + 10 && y_cord >= y_position + 6))
-					begin
-						colour = 3'b000;
-					end
-				
-				if (x_cord >= (position + 4) && x_cord <= (position + 5) && (y_cord <= (y_position + 10) && y_cord >= (y_position + 6)))
-					begin
-						colour = 3'b000;
-					end*/
-				
-				// drawing main character
-				// draw h0
-				/*if (y_cord == h0_y && (x_cord >= h0_start && x_cord <= h0_end))
-					begin
-						colour = 3'b000;
-					end
+			// draw the grave on platform 2
+			if ((x_cord >= grave_x && x_cord <= (grave_x + width)) && (y_cord >= grave_y && y_cord <= (grave_y + grave_length)))
+				begin
+					colour = 3'b111;
+				end
 
-				// draw h1
-				if (y_cord == h1_y && (x_cord >= platform_3_x_start && x_cord <= platform_3_x_end))
-					begin
-						colour = 3'b000;
-					end
+			// draw character
+			// draw head of the character
+			if ((x_cord >= (character_x_position + 1) && x_cord <= (character_x_position + 6)) &&
+				  (y_cord >= (character_y_position - 5) && y_cord <= character_y_position))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw b0
-				if (y_cord == b0_y && (x_cord >= b0_start && x_cord <= b0_end))
-					begin
-						colour = 3'b000;
-					end
+			// draw the torso of the chracter
+			if ((x_cord >= character_x_position && x_cord <= (character_x_position + 7)) &&
+					(y_cord >= character_y_position && y_cord <= (character_y_position + 7)))
+				begin
+					colour = 3'b101;
+				end
 
-				// draw b1
-				if (y_cord == b1_y && (x_cord >= b1_start && x_cord <= b1_end))
-					begin
-						colour = 3'b000;
-					end
+			// draw the left arm of the character
+			if ((x_cord >= (character_x_position - 1) && x_cord <= character_x_position) &&
+					(y_cord >= (character_y_position + 2) && y_cord <= (character_y_position + 4)))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw b2
-				if (y_cord == b2_y && (x_cord >= b2_start && x_cord <= b2_end))
-					begin
-						colour = 3'b000;
-					end*/
+			if ((x_cord >= (character_x_position - 3) && x_cord <= (character_x_position - 1)) &&
+					(y_cord >= (character_y_position - 5) && y_cord <= (character_y_position + 4)))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw ghost layer 1
-				/*if (x_cord == ghost_l1_y && (x_cord >=  ghost_l1_start && x_cord <= ghost_l1_end))
-					begin
-						colour = 3'b110;
-					end
+			// draw the right arm of the character
+			if ((x_cord >= (character_x_position + 7) && x_cord <= (character_x_position + 8)) &&
+					(y_cord >= (character_y_position + 2) && y_cord <= (character_y_position + 4)))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw ghost layer 2
-				if (x_cord == ghost_l2_y && (x_cord >=  ghost_l2_start && x_cord <= ghost_l2_end))
-					begin
-						colour = 3'b110;
-					end
+			if ((x_cord >= (character_x_position + 8) && x_cord <= (character_x_position + 10)) &&
+					(y_cord >= (character_y_position - 5) && y_cord <= (character_y_position + 4)))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw ghost layer 3
-				if (x_cord == ghost_l3_y && (x_cord >=  ghost_l3_start && x_cord <= ghost_l3_end))
-					begin
-						colour = 3'b110;
-					end
+			// draw the left foot of the character
+			if ((x_cord >= (character_x_position + 1) && x_cord <= (character_x_position + 3)) &&
+					(y_cord >= (character_y_position + 7) && y_cord <= (character_y_position + 11)))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw ghost layer 4
-				if (x_cord == ghost_l4_y && (x_cord >=  ghost_l4_start && x_cord <= ghost_l4_end))
-					begin
-						colour = 3'b110;
-					end
+			// draw the right foot of the character
+			if ((x_cord >= (character_x_position + 4) && x_cord <= (character_x_position + 6)) &&
+					(y_cord >= (character_y_position + 7) && y_cord <= (character_y_position + 11)))
+				begin
+					colour = 3'b000;
+				end
 
-				// draw ghost layer 5
-				if (x_cord == ghost_l5_y && (x_cord >=  ghost_l5_start && x_cord <= ghost_l5_end))
-					begin
-						colour = 3'b110;
-					end
+			// draw the left eye of the character
+			if (x_cord == (character_x_position + 2) &&  y_cord == (character_y_position - 3))
+				begin
+					colour = 3'b100;
+				end
 
-				// draw ghost layer 6
-				if (x_cord == ghost_l6_y && (x_cord >=  ghost_l6_start && x_cord <= ghost_l6_end))
-					begin
-						colour = 3'b110;
-					end
-
-				// draw ghost layer 7
-				if (x_cord == ghost_l7_y && (x_cord >=  ghost_l7_start && x_cord <= ghost_l7_end))
-					begin
-						colour = 3'b110;
-					end
-
-				// draw ghost layer 8
-				if (x_cord == ghost_l8_y && (x_cord >=  ghost_l8_start && x_cord <= ghost_l8_end))
-					begin
-						colour = 3'b110;
-					end
-
-				// draw ghost layer 9
-				if (x_cord == ghost_l9_y && (x_cord >=  ghost_l9_start && x_cord <= ghost_l9_end))
-					begin
-						colour = 3'b110;
-					end
-
-				// draw ghost layer 10
-				if (x_cord == ghost_l10_y && (x_cord >=  ghost_l10_start && x_cord <= ghost_l10_end))
-					begin
-						colour = 3'b110;
-					end*/
+			// draw the right eye of the character
+			if (x_cord == (character_x_position + 4) &&  y_cord == (character_y_position - 3))
+				begin
+					colour = 3'b100;
+				end
 		end
 
 		always @ (posedge new_clock)
 			begin
-				if (position == max_x) position = 10'd0;
-				else position = position + 1;
+				// move the character to the left if the left key is pressed (key[1])
+				if (key[1] == 1'b1) character_x_position = character_x_position - 1;
+				else character_x_position = character_x_position;
+
+				// move the chracter to the right if the right key is pressed (key[0])
+				if (key[0] == 1'b1) character_x_position = character_x_position + 1;
+				else character_x_position = character_x_position;
 			end
 
-
-			
+	// assign the registers to the wire counter parts
 	assign x_out_wire = x_cord;
 	assign y_out_wire = y_cord;
 	assign colour_out_wire = colour;
 
+	// assign the wires to the output
 	assign x_out = x_out_wire;
 	assign y_out = y_out_wire;
 	assign colour_out = colour_out_wire;
 
 endmodule
 
+
+/*
+	This module is responsible for reducing the on board clock speed of 5 MHz
+	(CLOCK_50) to the desired number of cycle determined by the rate argument.
+*/
 module limiter (out, clock, rate);
 
 	input clock;
@@ -438,16 +316,19 @@ module limiter (out, clock, rate);
 
 	always @(posedge clock)
 		begin
-			if (counter == max_value) begin counter = 26'd0; out_reg = 1'b1; end
-			else begin counter = counter + 1; out_reg = 1'b0; end
+			if (counter == max_value)
+			begin
+				counter = 26'd0;
+				out_reg = 1'b1;
+			end
+			else
+				begin
+					counter = counter + 1;
+					out_reg = 1'b0;
+				end
 		end
 
 	assign out = out_wire;
 	assign out_wire = out_reg;
-
-endmodule
-
-
-module control_path ();
 
 endmodule
