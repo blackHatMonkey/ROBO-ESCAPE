@@ -274,13 +274,33 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 
 		always @ (posedge new_clock)
 			begin
-				// move the character to the left if the left key is pressed (key[1])
-				if (key[1] == 1'b1) character_x_position = character_x_position - 1;
-				else character_x_position = character_x_position;
-
 				// move the chracter to the right if the right key is pressed (key[0])
 				if (key[0] == 1'b1) character_x_position = character_x_position + 1;
 				else character_x_position = character_x_position;
+
+				// move the character to the left if the left key is pressed (key[1])
+				if (key[1] == 1'b1) character_x_position = character_x_position - 1;
+				else character_x_position = character_x_position;
+			end
+
+		reg jumping;
+		reg [9:0] max_jump;
+		always @(posedge new_clock)
+			begin
+
+				// jump 70 pixels
+				if (key[2] == 1'b1)
+					begin
+						jumping = 1'b1;
+						max_jump = character_y_position + 70;
+					end
+
+				if (jumping == 1'b1 && character_y_position != max_jump)
+					begin
+						character_y_position = character_y_position + 1;
+					end
+				else jumping = 1'b0;
+
 			end
 
 	// assign the registers to the wire counter parts
