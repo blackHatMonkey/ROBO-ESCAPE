@@ -3,6 +3,7 @@ module game
 	(
 		CLOCK_50,						//	On Board 50 MHz
     KEY,
+	 SW,
 		// The ports below are for the VGA output.  Do not change.
 		VGA_CLK,   						//	VGA Clock
 		VGA_HS,							//	VGA H_SYNC
@@ -12,13 +13,12 @@ module game
 		VGA_R,   						//	VGA Red[9:0]
 		VGA_G,	 						//	VGA Green[9:0]
 		VGA_B,   						//	VGA Blue[9:0]
-		HEX0,
-		HEX1
 	);
 
 	input			CLOCK_50;				//	50 MHz
 	// TODO remove these after testing
-	input   [3:0]   KEY;
+	input [3:0] KEY;
+	input [4:0] SW;
 
 	// Do not change the following outputs
 	output			VGA_CLK;   				//	VGA Clock
@@ -29,7 +29,6 @@ module game
 	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
 	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
-	output [6:0] HEX0, HEX1;
 
 	wire resetn;
 
@@ -65,34 +64,10 @@ module game
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 
-	draw d(x, y, colour, CLOCK_50, 10'd320, 10'd240, !KEY[3:0]);
-	reg [0:0] a, b, c, d2;
-	wire a1, b1, c1, d1;
-
-	always @ (*)
-		begin
-			if (OTG_DATA[0] == 1'b1) a = 1'b1;
-			else a = 1'b0;
-
-			if (OTG_DATA[1] == 1'b1) b = 1'b1;
-			else b = 1'b0;
-
-			if (OTG_DATA[2] == 1'b1) c = 1'b1;
-			else c = 1'b0;
-
-			if (OTG_DATA[3] == 1'b1) d2 = 1'b1;
-			else d2 = 1'b0;
-		end
+	draw d(x, y, colour, CLOCK_50, 10'd320, 10'd240, KEY[3:0]);
+	
 
 	assign writeEn = 1'b1;
-	assign a1 = a;
-	assign b1 = b;
-	assign c1 = c;
-	assign d1 = d2;
-	assign LEDR[0] = a1;
-	assign LEDR[1] = b1;
-	assign LEDR[2] = c1;
-	assign LEDR[3] = d1;
 
 
 endmodule
@@ -112,15 +87,19 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 	reg [9:0] x_cord, y_cord;
 	reg [2:0] colour;
 	reg [9:0] character_x_position, character_y_position;
+	reg jumping;
+	reg [9:0] max_jump;
 
 	wire new_clock;
 
-	limiter l(new_clock, clock, 27'd30);
+	limiter l(new_clock, clock, 27'd60);
 
 	initial
 		begin
 			character_x_position = 10'd0;
 			character_y_position = 10'd205;
+			jumping = 1'b0;
+			max_jump = 10'b0;
 		end
 
 		localparam platform_1_x_start = 10'd60, platform_1_x_end = 10'd100, platform_1_y = 10'd180,
@@ -199,7 +178,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 				end
 
 			// draw the grave on platform 2
-			if ((x_cord >= grave_x && x_cord <= (grave_x + width)) && (y_cord >= grave_y && y_cord <= (grave_y + grave_length)))
+			if ((x_cord >= grave_x && x_cord <= (grave_x + grave_width)) && (y_cord >= grave_y && y_cord <= (grave_y + grave_length)))
 				begin
 					colour = 3'b111;
 				end
@@ -275,31 +254,37 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 		always @ (posedge new_clock)
 			begin
 				// move the chracter to the right if the right key is pressed (key[0])
-				if (key[0] == 1'b1) character_x_position = character_x_position + 1;
+				if (key[3] == 1'b1) character_x_position = character_x_position + 1;
 				else character_x_position = character_x_position;
 
 				// move the character to the left if the left key is pressed (key[1])
-				if (key[1] == 1'b1) character_x_position = character_x_position - 1;
+				if (key[2] == 1'b1) character_x_position = character_x_position - 1;
 				else character_x_position = character_x_position;
 			end
 
-		reg jumping;
-		reg [9:0] max_jump;
 		always @(posedge new_clock)
 			begin
-
+			
 				// jump 70 pixels
-				if (key[2] == 1'b1)
+				if (key[0] == 1'b0 && jumping == 1'b0)
 					begin
 						jumping = 1'b1;
-						max_jump = character_y_position + 70;
+						max_jump = character_y_position - 40;
 					end
+				else
+					character_y_position = character_y_position;
 
-				if (jumping == 1'b1 && character_y_position != max_jump)
+				if (jumping == 1'b1) character_y_position = character_y_position - 1;
+					
+				if (jumping == 1'b1 && character_y_position == max_jump)
 					begin
-						character_y_position = character_y_position + 1;
+						jumping = 1'b0;
 					end
-				else jumping = 1'b0;
+				
+				
+				
+				//if (key[0] == 1'b0) character_y_position = character_y_position - 1;
+				//else character_y_position = character_y_position;
 
 			end
 
