@@ -65,7 +65,7 @@ module game
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 
 	draw d(x, y, colour, CLOCK_50, 10'd320, 10'd240, KEY[3:0]);
-	
+
 
 	assign writeEn = 1'b1;
 
@@ -89,10 +89,14 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 	reg [9:0] character_x_position, character_y_position;
 	reg jumping;
 	reg [9:0] max_jump;
+	wire [2:0] character_down;
 
 	wire new_clock;
+	wire [2:0] flag;
 
-	limiter l(new_clock, clock, 27'd60);
+	limiter slow_clock(new_clock, clock, 27'd60);
+	background bg(flag, x_cord, y_cord, clock);
+	background bg_down(character_down, character_x_position + 4, character_y_position + 12, clock);
 
 	initial
 		begin
@@ -102,14 +106,6 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 			max_jump = 10'b0;
 		end
 
-		localparam platform_1_x_start = 10'd60, platform_1_x_end = 10'd100, platform_1_y = 10'd180,
-							 platform_2_x_start = 10'd220, platform_2_x_end =10'd260, platform_2_y = 10'd180,
-							 platform_3_x_start = 10'd100, platform_3_x_end = 10'd140, platform_3_y = 10'd120,
-							 platform_4_x_start = 10'd180, platform_4_x_end = 10'd220, platform_4_y = 10'd120,
-							 platform_5_x_start = 10'd140, platform_5_x_end = 10'd180, platform_5_y = 10'd60,
-							 grave_y = 10'd169, grave_length = 8, grave_x = 10'd245, grave_width = 6,
-							 grass_y_start = 10'd234, grass_y_end = 10'd239,
-							 sacred_tree_x_start = 10'd15, sacred_tree_x_end = 10'd45;
 
 
 	always @ (posedge clock)
@@ -135,52 +131,10 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 					y_cord = 10'b0;
 				end
 
-			// draw platform 1
-			if (y_cord == platform_1_y && (x_cord >= platform_1_x_start && x_cord <= platform_1_x_end))
+			// draw the platforms
+			if (flag != 3'b000)
 				begin
-					colour = 3'b111;
-				end
-
-			// draw platform 2
-			if (y_cord == platform_2_y && (x_cord >= platform_2_x_start && x_cord <= platform_2_x_end))
-				begin
-					colour = 3'b111;
-				end
-
-			// draw platform 3
-			if (y_cord == platform_3_y && (x_cord >= platform_3_x_start && x_cord <= platform_3_x_end))
-				begin
-					colour = 3'b111;
-				end
-
-			// draw platform 4
-			if (y_cord == platform_4_y && (x_cord >= platform_4_x_start && x_cord <= platform_4_x_end))
-				begin
-					colour = 3'b111;
-				end
-
-			// draw platform 5
-			if (y_cord == platform_5_y && (x_cord >= platform_5_x_start && x_cord <= platform_5_x_end))
-				begin
-					colour = 3'b111;
-				end
-
-			// draw the grass
-			if (x_cord % 2 == 0 && (y_cord >= grass_y_start && y_cord <= grass_y_end))
-				begin
-					colour = 3'b010;
-				end
-
-			// draw the tree
-			if (x_cord >= sacred_tree_x_start && x_cord <= sacred_tree_x_end)
-				begin
-					colour = 3'b111;
-				end
-
-			// draw the grave on platform 2
-			if ((x_cord >= grave_x && x_cord <= (grave_x + grave_width)) && (y_cord >= grave_y && y_cord <= (grave_y + grave_length)))
-				begin
-					colour = 3'b111;
+					colour = flag;
 				end
 
 			// draw character
@@ -260,13 +214,15 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 				// move the character to the left if the left key is pressed (key[1])
 				if (key[2] == 1'b1) character_x_position = character_x_position - 1;
 				else character_x_position = character_x_position;
-			end
 
-		always @(posedge new_clock)
-			begin
-			
+				if (character_down == 3'b000 && jumping == 1'b0)
+					begin
+						character_y_position = character_y_position + 1;
+					end
+
+
 				// jump 70 pixels
-				if (key[0] == 1'b0 && jumping == 1'b0)
+				if (key[0] == 1'b0 && jumping == 1'b0 && character_down != 3'b000)
 					begin
 						jumping = 1'b1;
 						max_jump = character_y_position - 40;
@@ -275,16 +231,11 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 					character_y_position = character_y_position;
 
 				if (jumping == 1'b1) character_y_position = character_y_position - 1;
-					
+
 				if (jumping == 1'b1 && character_y_position == max_jump)
 					begin
 						jumping = 1'b0;
 					end
-				
-				
-				
-				//if (key[0] == 1'b0) character_y_position = character_y_position - 1;
-				//else character_y_position = character_y_position;
 
 			end
 
@@ -335,5 +286,83 @@ module limiter (out, clock, rate);
 
 	assign out = out_wire;
 	assign out_wire = out_reg;
+
+endmodule
+
+module background (flag, x_cord, y_cord, clock);
+
+	input  clock;
+	input [9:0] x_cord, y_cord;
+
+	output [2:0] flag;
+
+	reg [2:0] colour;
+
+	localparam platform_1_x_start = 10'd60, platform_1_x_end = 10'd100, platform_1_y = 10'd180,
+						 platform_2_x_start = 10'd220, platform_2_x_end =10'd260, platform_2_y = 10'd180,
+						 platform_3_x_start = 10'd100, platform_3_x_end = 10'd140, platform_3_y = 10'd120,
+						 platform_4_x_start = 10'd180, platform_4_x_end = 10'd220, platform_4_y = 10'd120,
+						 platform_5_x_start = 10'd140, platform_5_x_end = 10'd180, platform_5_y = 10'd60,
+						 grave_y = 10'd169, grave_length = 8, grave_x = 10'd245, grave_width = 6,
+						 grass_y_start = 10'd234, grass_y_end = 10'd239,
+						 sacred_tree_x_start = 10'd15, sacred_tree_x_end = 10'd45;
+
+	always @(posedge clock)
+		begin
+
+			// default colour
+			colour = 3'b000;
+
+			// draw platform 1
+			if (y_cord == platform_1_y && (x_cord >= platform_1_x_start && x_cord <= platform_1_x_end))
+				begin
+					colour = 3'b111;
+				end
+
+			// draw platform 2
+			if (y_cord == platform_2_y && (x_cord >= platform_2_x_start && x_cord <= platform_2_x_end))
+				begin
+					colour = 3'b111;
+				end
+
+			// draw platform 3
+			if (y_cord == platform_3_y && (x_cord >= platform_3_x_start && x_cord <= platform_3_x_end))
+				begin
+					colour = 3'b111;
+				end
+
+			// draw platform 4
+			if (y_cord == platform_4_y && (x_cord >= platform_4_x_start && x_cord <= platform_4_x_end))
+				begin
+					colour = 3'b111;
+				end
+
+			// draw platform 5
+			if (y_cord == platform_5_y && (x_cord >= platform_5_x_start && x_cord <= platform_5_x_end))
+				begin
+					colour = 3'b111;
+				end
+
+			// draw the grass block
+			if ((x_cord >= 10'd0 && x_cord <= 10'd320) && (y_cord >= 10'd236 && y_cord <= 10'd250))
+				begin
+					colour = 3'b010;
+				end
+
+			// draw the tree
+			if (x_cord >= sacred_tree_x_start && x_cord <= sacred_tree_x_end)
+				begin
+					colour = 3'b111;
+				end
+
+			// draw the grave on platform 2
+			if ((x_cord >= grave_x && x_cord <= (grave_x + grave_width)) && (y_cord >= grave_y && y_cord <= (grave_y + grave_length)))
+				begin
+					colour = 3'b111;
+				end
+		end
+
+		assign flag = colour;
+
 
 endmodule
