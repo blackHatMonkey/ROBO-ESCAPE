@@ -36,7 +36,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 
   initial
 		begin
-			character_x_position = 9'd0;
+			character_x_position = 9'd35;
 			character_y_position = 9'd205;
 			jumping = 1'b0;
 			max_jump = 9'b0;
