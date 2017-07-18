@@ -13,20 +13,31 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
   reg [8:0] x_cord, y_cord;
   reg [2:0] colour;
   reg [8:0] character_x_position, character_y_position;
+  reg [8:0] projectile_x_position, projectile_y_position;
   reg jumping;
   reg [8:0] max_jump;
+  reg reset_character;
+
+
+
   wire [2:0] character_down;
   wire [2:0] character_right;
   wire [2:0] character_left;
   wire [2:0] character_up;
 
   wire new_clock;
+  wire frq;
+  wire speed;
   wire [2:0] flag;
   wire [2:0] cflag;
+  wire [2:0] prflag;
 
   limiter slow_clock(new_clock, clock, 8'd60);
+  limiter frq_mod(frq, clock, 8'd1);
+  limiter speed_mod(speed, clock, 8'd100);
   background bg(flag, x_cord, y_cord, clock);
   character ch1(cflag, x_cord, y_cord, character_x_position, character_y_position, clock);
+  projectile p1(prflag, x_cord, y_cord, projectile_x_position, projectile_y_position, clock);
 
   // TODO needs more testing for collosion
   background collision_down(character_down, character_x_position + 9'd4, character_y_position + 9'd12, clock);
@@ -38,6 +49,8 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 		begin
 			character_x_position = 9'd35;
 			character_y_position = 9'd205;
+      projectile_x_position = 9'd100;
+      projectile_y_position = 9'd150;
 			jumping = 1'b0;
 			max_jump = 9'b0;
 		end
@@ -68,8 +81,14 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
         colour = flag;
 
       // draw the character
-      if (cflag != 3'b111)
+      if (cflag != 3'b111 && prflag == 3'b000)
         colour = cflag;
+      else if (cflag != 3'b111 && prflag != 3'b000)
+        reset_character = 1'b1;
+
+      // draw the projectile
+      if (prflag != 3'b000)
+        colour = prflag;
     end
 
   always @ (posedge new_clock)
@@ -107,7 +126,33 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
         begin
           jumping = 1'b0;
         end
+
+      if (reset_character == 1'b1)
+        begin
+          character_x_position = 9'd20;
+          character_y_position = 9'd220;
+          reset_character = 1'b0;
+        end
+
+
     end
+
+    /*always @ (posedge frq)
+      begin
+        projectile_x_position = 9'd20;
+        projectile_y_position = 9'd200;
+      end*/
+
+    always @ (posedge speed)
+      begin
+        if (projectile_x_position == max_x)
+          begin
+          projectile_x_position = 9'd20;
+          projectile_y_position = 9'd200;
+          end
+        else
+          projectile_x_position = projectile_x_position + 1;
+      end
 
   // assign the registers to the wire counter parts
   assign x_out_wire = x_cord;
