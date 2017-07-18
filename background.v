@@ -26,7 +26,7 @@ module background (flag, x_cord, y_cord, clock);
   small_platform_11_x = 9'd200, tower_x = 9'd8, tower_y = 9'd120,
   tower_lenght = 120, tower_width = 25, window_border_length = 320,
   window_border_width = 240, top_left_corner = 9'd0, top_right_corner = 9'd320,
-  bottom_left_corner = 9'd240 , helicopter_x = 9'd170, helicopter_y = 9'd50;
+  bottom_left_corner = 9'd240 , helicopter_x = 9'd240, helicopter_y = 9'd30;
 
   always @(posedge clock)
     begin
@@ -140,7 +140,7 @@ module background (flag, x_cord, y_cord, clock);
 
     // draw the tower body
     if ((x_cord >= tower_x && x_cord <= (tower_x + tower_width)) &&
-        (y_cord <= tower_y && y_cord <= (tower_y + tower_lenght)))
+        (y_cord >= tower_y && y_cord <= (tower_y + tower_lenght)))
       colour = white;
 
     // draw the tower top
