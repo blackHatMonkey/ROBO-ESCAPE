@@ -1,4 +1,4 @@
-module collision(is_colliding, character_x_position, character_y_position, side_arg, clock);
+module collision(is_colliding, character_x_position, character_y_position, clock);
 
   // input values
 	input [8:0] character_x_position, character_y_position;
@@ -10,13 +10,19 @@ module collision(is_colliding, character_x_position, character_y_position, side_
 	reg collision;
 	reg c2;
 
-	reg [8:0] counter = character_y_position;
-	reg [8:0] max_value = character_y_position + 10;
+	reg [8:0] counter;
+	reg [8:0] max_value;
 
 	wire [2:0] back_out;
+	
+	initial
+	begin
+	counter = character_y_position;
+	max_value = character_y_position + 10;
+	end
 
 
-	background b_check(back_out, character_x_position, counter, clock)
+	background b_check(back_out, character_x_position, counter, clock);
 
   always @(posedge clock)
 		begin
@@ -27,6 +33,7 @@ module collision(is_colliding, character_x_position, character_y_position, side_
 					counter = character_y_position;
 					collision = 1'b0;
 					c2 = 1'b1;
+					max_value = character_y_position + 10;
 				end
 			else
 				begin

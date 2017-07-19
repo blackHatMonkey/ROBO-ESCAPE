@@ -33,33 +33,43 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
   wire [2:0] flag;
   wire [2:0] cflag;
   wire [2:0] prflag;
+  wire [2:0] trflag;
+
+  
+  wire [2:0] proj_collision;
 
   limiter slow_clock(new_clock, clock, 8'd60);
   limiter frq_mod(frq, clock, 8'd1);
-  limiter speed_mod(speed, clock, 8'd100);
+  limiter speed_mod(speed, clock, 8'd500);
   background bg(flag, x_cord, y_cord, clock);
+  traps tr(trflag, x_cord, y_cord, clock);
   character ch1(cflag, x_cord, y_cord, character_x_position, character_y_position, clock);
   projectile p1(prflag, x_cord, y_cord, projectile_x_position, projectile_y_position, clock);
 
-  // TODO needs more testing for collosion
-  collision c_left(character_left, character_x_position - 4, character_y_position - 6, clock);
+  // TODO needs more testing for collosio
+  //collision between character and the projectile
+  character projectile_collision(proj_collision, projectile_x_position, projectile_y_position, character_x_position, character_y_position, clock);
+  //collision c_left(character_left, character_x_position - 4, character_y_position - 6, clock);
+  //collision with the background
   background collision_down(character_down_1, character_x_position + 9'd4, character_y_position + 9'd13, clock);
-  //background collision_right(character_right_1, character_x_position + 9'd11, character_y_position + 9'd4, clock);
-  //background collistion_left(character_left_1, character_x_position - 9'd4, character_y_position + 9'd4, clock);
+  background collision_right(character_right_1, character_x_position + 9'd11, character_y_position + 9'd4, clock);
+  background collistion_left(character_left_1, character_x_position - 9'd4, character_y_position + 9'd4, clock);
   background collistion_up(character_up_1, character_x_position  + 9'd4, character_y_position - 9'd6, clock);
   background collision_down_2(character_down_2, character_x_position + 9'd4 + 9'd2, character_y_position + 9'd13, clock);
-  //background collision_right_2(character_right_2, character_x_position + 9'd11, character_y_position + 9'd4 + 9'd3, clock);
-  //background collistion_left_2(character_left_2, character_x_position - 9'd4, character_y_position + 9'd4 + 9'd3, clock);
+  background collision_right_2(character_right_2, character_x_position + 9'd11, character_y_position + 9'd4 + 9'd3, clock);
+  background collistion_left_2(character_left_2, character_x_position - 9'd4, character_y_position + 9'd4 + 9'd3, clock);
   background collistion_up_2(character_up_2, character_x_position  + 9'd4 + 9'd2, character_y_position - 9'd6, clock);
   background collision_down_3(character_down_3, character_x_position + 9'd4 - 9'd2, character_y_position + 9'd13, clock);
-  //background collision_right_3(character_right_3, character_x_position + 9'd11, character_y_position + 9'd4 - 9'd3, clock);
-  //background collistion_left_3(character_left_3, character_x_position - 9'd4, character_y_position + 9'd4 - 9'd3, clock);
+  background collision_right_3(character_right_3, character_x_position + 9'd11, character_y_position + 9'd4 - 9'd3, clock);
+  background collistion_left_3(character_left_3, character_x_position - 9'd4, character_y_position + 9'd4 - 9'd3, clock);
   background collistion_up_3(character_up_3, character_x_position  + 9'd4 - 9'd2, character_y_position - 9'd6, clock);
+  
+  //
 
   assign character_down = (character_down_1 | character_down_2 | character_down_3);
   assign character_up = (character_up_1 | character_up_2 | character_up_3);
   assign character_left = (character_left_1 | character_left_2 | character_left_3);
-  assign character_right = (character_right_1 | character_right_2 | character_right_3);*/
+  assign character_right = (character_right_1 | character_right_2 | character_right_3);
   initial
 		begin
 			character_x_position = 9'd35;
@@ -94,6 +104,10 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
       // draw the platforms
       if (flag != 3'b000)
         colour = flag;
+		
+		// draw the traps
+		if (trflag != 3'b000)
+			colour = trflag;
 
       // draw the character
       if (cflag != 3'b111 && prflag == 3'b000)
@@ -104,11 +118,14 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
       // draw the projectile
       if (prflag != 3'b000)
         colour = prflag;
-
-		if (character_left != 3'b000)
-			colour = character_left;
+		 
+		if (key[1] == 1'b0 || (proj_collision != 3'b111))
+			reset_character = 1'b1;
+		else reset_character = 1'b0;
+		
 
     end
+
 
   always @ (posedge new_clock)
     begin
@@ -145,6 +162,19 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
         begin
           jumping = 1'b0;
         end
+		
+		//reset the position of the character
+		
+		if (reset_character == 1'b1) 
+			begin
+				character_x_position = 9'd45;
+				character_y_position = 9'd215;
+			end
+		else
+			begin
+				character_x_position = character_x_position;
+				character_y_position = character_y_position;
+			end
 
     end
 
@@ -156,7 +186,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 
     always @ (posedge speed)
       begin
-        if (projectile_x_position == max_x)
+        if (projectile_x_position == max_x || frq)
           begin
           projectile_x_position = 9'd20;
           projectile_y_position = 9'd200;
