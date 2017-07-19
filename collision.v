@@ -1,52 +1,48 @@
-module collision(is_colliding, character_x_position, character_y_position, clock);
+module collision_char_plat(character_down, character_up, character_left, character_right, character_x_position, character_y_position, clock);
 
-  // input values
-	input [8:0] character_x_position, character_y_position;
-	input clock;
-
-	// output values
-	output is_colliding;
-
-	reg collision;
-	reg c2;
-
-	reg [8:0] counter;
-	reg [8:0] max_value;
-
-	wire [2:0] back_out;
-	
-	initial
-	begin
-	counter = character_y_position;
-	max_value = character_y_position + 10;
-	end
+   input [8:0] character_x_position, character_y_position, clock;
+   output [2:0] character_down, character_up, character_left, character_right;
+   
+   
+   wire [2:0] 	character_down_1, character_down_2, character_down_3;
+   wire [2:0] 	character_right_1, character_right_2, character_right_3, character_right_4, character_right_5, character_right_6, character_right_7;
+   wire [2:0] 	character_left_1, character_left_2, character_left_3, character_left_4, character_left_5, character_left_6, character_left_7;
+   wire [2:0] 	character_up_1, character_up_2, character_up_3;
 
 
-	background b_check(back_out, character_x_position, counter, clock);
+   //collision c_left(character_left, character_x_position - 4, character_y_position - 6, clock);
+   //collision with the background
+   background collision_down_1(character_down_1, character_x_position + 9'd4, character_y_position + 9'd13, clock);
+   background collision_down_2(character_down_2, character_x_position + 9'd4 + 9'd2, character_y_position + 9'd13, clock);
+   background collision_down_3(character_down_3, character_x_position + 9'd4 - 9'd2, character_y_position + 9'd13, clock);
+   
+   
+   background collision_right_1(character_right_1, character_x_position + 9'd11, character_y_position + 9'd4, clock);
+   background collision_right_2(character_right_2, character_x_position + 9'd11, character_y_position + 9'd4 + 9'd3, clock);
+   background collision_right_3(character_right_3, character_x_position + 9'd11, character_y_position + 9'd4 - 9'd3, clock);
+   background collision_right_4(character_right_4, character_x_position + 9'd11, character_y_position + 9'd4 + 9'd2, clock);
+   background collision_right_5(character_right_5, character_x_position + 9'd11, character_y_position + 9'd4 - 9'd2, clock);
+   background collision_right_6(character_right_6, character_x_position + 9'd11, character_y_position + 9'd4 + 9'd1, clock);
+   background collision_right_7(character_right_7, character_x_position + 9'd11, character_y_position + 9'd4 - 9'd1, clock);
 
-  always @(posedge clock)
-		begin
-			collision = 1;
+   
+   background collistion_left_1(character_left_1, character_x_position - 9'd4, character_y_position + 9'd4, clock);
+   background collistion_left_2(character_left_2, character_x_position - 9'd4, character_y_position + 9'd4 + 9'd3, clock);
+   background collistion_left_3(character_left_3, character_x_position - 9'd4, character_y_position + 9'd4 - 9'd3, clock);
+   background collistion_left_4(character_left_4, character_x_position - 9'd4, character_y_position + 9'd4 + 9'd2, clock);
+   background collistion_left_5(character_left_5, character_x_position - 9'd4, character_y_position + 9'd4 - 9'd2, clock);
+   background collistion_left_6(character_left_6, character_x_position - 9'd4, character_y_position + 9'd4 + 9'd1, clock);
+   background collistion_left_7(character_left_7, character_x_position - 9'd4, character_y_position + 9'd4 - 9'd1, clock);
+   
+   background collistion_up_1(character_up_1, character_x_position  + 9'd4, character_y_position - 9'd6, clock);
+   background collistion_up_2(character_up_2, character_x_position  + 9'd4 + 9'd2, character_y_position - 9'd6, clock);
+   background collistion_up_3(character_up_3, character_x_position  + 9'd4 - 9'd2, character_y_position - 9'd6, clock);
+   
+   //
 
-			if (counter == max_value && c2 == 1'b0)
-				begin
-					counter = character_y_position;
-					collision = 1'b0;
-					c2 = 1'b1;
-					max_value = character_y_position + 10;
-				end
-			else
-				begin
-
-				if (back_out != 3'b000)
-					c2 = 1'b0;
-					counter = counter + 9'd1;
-
-				end
-
-		end
-
-		// assign the output
-		assign is_colliding = collision;
-
+   assign character_down = (character_down_1 | character_down_2 | character_down_3);
+   assign character_up = (character_up_1 | character_up_2 | character_up_3);
+   assign character_left = (character_left_1 | character_left_2 | character_left_3 | character_left_4 | character_left_5 | character_left_6 | character_left_7);
+   assign character_right = (character_right_1 | character_right_2 | character_right_3 | character_right_4 | character_right_5 | character_right_6 | character_right_7);
+   
 endmodule
