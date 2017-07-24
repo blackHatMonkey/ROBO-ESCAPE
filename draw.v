@@ -17,6 +17,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
    reg 		jumping;
    reg [8:0] 	max_jump;
    reg 		reset_character;
+   reg reset_projectile;
 
    wire [2:0] 	character_up, character_down, character_left, character_right;
    wire [2:0] 	character_up_trap, character_down_trap, character_left_trap, character_right_trap;
@@ -29,13 +30,13 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
    wire [2:0] 	prflag;
    wire [2:0] 	trflag;
 
-   
+
    wire [2:0] 	proj_collision;
    wire [2:0] 	trap_collision;
-   
+
    limiter slow_clock(new_clock, clock, 8'd60);
-   limiter frq_mod(frq, clock, 8'd1);
-   limiter speed_mod(speed, clock, 8'd500);
+   limiter frq_mod(frq, clock, 8'd30);
+   limiter speed_mod(speed, clock, 8'd60);
    background bg(flag, x_cord, y_cord, clock);
    traps tr(trflag, x_cord, y_cord, clock);
    character ch1(cflag, x_cord, y_cord, character_x_position, character_y_position, clock);
@@ -49,17 +50,17 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
    collision_char_plat platform_collision(character_down, character_up, character_left, character_right, character_x_position, character_y_position, clock);
 
    // collision between character and the traps
-   collision_char_traps trap_collision(character_down_trap, character_up_trap, character_left_trap, character_right_trap, character_x_position, character_y_position, clock);
+   collision_char_traps trap_collision_mod(character_down_trap, character_up_trap, character_left_trap, character_right_trap, character_x_position, character_y_position, clock);
 
    // checks whether any of the hitboxes of the character overlaps with any of the traps. NOTE: It uses the same code as checking the platform collision so coming slightly close to the traps will reset the player position
    assign trap_collision = (character_down_trap | character_up_trap |  character_left_trap | character_right_trap);
-         
+
    initial
      begin
 	character_x_position = 9'd35;
 	character_y_position = 9'd205;
 	projectile_x_position = 9'd100;
-	projectile_y_position = 9'd150;
+	projectile_y_position = 9'd50;
 	jumping = 1'b0;
 	max_jump = 9'b0;
      end
@@ -88,7 +89,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 	// draw the platforms
 	if (flag != 3'b000)
           colour = flag;
-	
+
 	// draw the traps
 	if (trflag != 3'b000)
 	  colour = trflag;
@@ -103,22 +104,27 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 
 	// checks all the condition where the character will "die" and reset
 	if (key[1] == 1'b0 || (proj_collision != 3'b111) || (trap_collision != 3'b000))
+  begin
 	  reset_character = 1'b1;
-	else reset_character = 1'b0;
-	
-
-     end
+    reset_projectile = 1'b1;
+  end
+  else
+  begin
+    reset_character = 1'b0;
+    reset_projectile = 1'b0;
+  end
+ end
 
 
    always @ (posedge new_clock)
      begin
 	// TODO could be a bug where key value is 1 it moves
 	// move the chracter to the right if the right key is pressed (key[3])
-	if (key[3] == 1'b1 && character_right == 3'b000) character_x_position = character_x_position + 9'd1;
+	if (key[2] == 1'b0 && character_right == 3'b000) character_x_position = character_x_position + 9'd1;
 	else character_x_position = character_x_position;
 
 	// move the character to the left if the left key is pressed (key[2)
-	if (key[2] == 1'b1 && character_left == 3'b000) character_x_position = character_x_position - 9'd1;
+	if (key[3] == 1'b0 && character_left == 3'b000) character_x_position = character_x_position - 9'd1;
 	else character_x_position = character_x_position;
 
 	// fall down if you are not jumping or on a surface(gravity)
@@ -133,7 +139,7 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 	if (key[0] == 1'b0 && jumping == 1'b0 && character_down != 3'b000)
           begin
              jumping = 1'b1;
-             max_jump = character_y_position - 9'd40;
+             max_jump = character_y_position - 9'd70;
           end
 	else
           character_y_position = character_y_position;
@@ -145,10 +151,10 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
           begin
              jumping = 1'b0;
           end
-	
+
 	//reset the position of the character
-	
-	if (reset_character == 1'b1) 
+
+	if (reset_character == 1'b1)
 	  begin
 	     character_x_position = 9'd45;
 	     character_y_position = 9'd215;
@@ -160,26 +166,89 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key);
 	  end
 
      end
-
-   always @ (posedge speed)
-
      reg [8:0] slope;
-        
-     begin
-        if (projectile_x_position == max_x || frq)
+   always @ (posedge speed)
+   //
+   begin
+     if (reset_projectile == 1'b1)
+   	  begin
+      projectile_x_position = 9'd100;
+      projectile_y_position = 9'd50;
+   	  end
+   	else
+   	  begin
+   	     projectile_x_position = projectile_x_position;
+   	     projectile_y_position = projectile_y_position;
+   	  end
+     /*begin
+        if (projectile_x_position == max_x || frq == 1'b1)
           begin
              projectile_x_position = 9'd20;
              projectile_y_position = 9'd200;
           end
-        else
+        else*/
 	  // NOTE: this code might be a little buggy since we are updating the proj position by updating the slope ie the direction. It might give some weird results: tracking maybe.
 	  // A better way is to keep a constant initial slope for the projectile and update the current projectile positon based on that only.
-	  begin
-	     slope = (character_y_position - projectile_y_position) / (character_x_position - projectile_x_position);
-	     projectile_x_position = projectile_x_position + 1;
-	     projectile_y_position = (slope * projectile_x_position);
-	  end   
-     end
+	  //begin
+	     //slope = (character_y_position - projectile_y_position) / (character_x_position - projectile_x_position);
+	     //projectile_x_position = projectile_x_position + 1;
+       //projectile_y_position = projectile_y_position + slope;
+      if (frq)
+       if (character_x_position > projectile_x_position && character_y_position > projectile_y_position)
+          begin
+            projectile_x_position = projectile_x_position + 1;
+            projectile_y_position = projectile_y_position + 1;
+          end
+      //
+      else if (character_x_position < projectile_x_position && character_y_position > projectile_y_position)
+         begin
+           projectile_x_position = projectile_x_position - 1;
+           projectile_y_position = projectile_y_position + 1;
+         end
+      //
+      else if (character_x_position < projectile_x_position && character_y_position < projectile_y_position)
+         begin
+           projectile_x_position = projectile_x_position - 1;
+           projectile_y_position = projectile_y_position - 1;
+         end
+      //
+      else if (character_x_position > projectile_x_position && character_y_position == projectile_y_position)
+         begin
+           projectile_x_position = projectile_x_position + 1;
+           projectile_y_position = projectile_y_position;
+         end
+      //
+      else if (character_x_position == projectile_x_position && character_y_position < projectile_y_position)
+         begin
+           projectile_x_position = projectile_x_position;
+           projectile_y_position = projectile_y_position - 1;
+         end
+      //
+      else if (character_x_position < projectile_x_position && character_y_position == projectile_y_position)
+         begin
+           projectile_x_position = projectile_x_position - 1;
+           projectile_y_position = projectile_y_position;
+         end
+      //
+      else if (character_x_position == projectile_x_position && character_y_position > projectile_y_position)
+         begin
+           projectile_x_position = projectile_x_position;
+           projectile_y_position = projectile_y_position + 1;
+         end
+      else
+      //
+         begin
+           projectile_x_position = projectile_x_position + 1;
+           projectile_y_position = projectile_y_position - 1;
+         end
+      end
+      else //if (!frq)
+        //
+        begin
+          projectile_x_position = projectile_x_position;
+          projectile_y_position = projectile_y_position;
+        end
+	  end
 
    // assign the registers to the wire counter parts
    assign x_out_wire = x_cord;

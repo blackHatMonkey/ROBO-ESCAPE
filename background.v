@@ -9,24 +9,32 @@ module background (flag, x_cord, y_cord, clock);
 
   reg [2:0] colour;
 
+  reg platform_5_x;
+
   // hard coded positions for the background objects
   localparam white = 3'b111, platform_1_x = 9'd60, platform_1_y = 9'd180,
   full_platform_length = 40, full_platform_width = 3, platform_2_x = 9'd220,
   platform_3_x = 9'd100, platform_3_y = 9'd120, platform_4_x = 9'd180,
-  platform_5_x = 9'd140, platform_5_y = 9'd60,
+  platform_5_y = 9'd60, platform_5_x_min = 9'd40, platform_5_x_max = 9'd260,
   small_platform_length = 10, small_platform_width = 3,
-  small_platform_1_x = 9'd75, small_platform_1_y = 9'd220,
-  small_platform_2_x = 9'd240, small_platform_3_x = 9'd45,
-  small_platform_3_y = 9'd200, small_platform_4_x = 9'd270,
-  small_platform_5_x = 9'd90, small_platform_5_y = 9'd160,
-  small_platform_6_x = 9'd210, small_platform_7_x = 9'd160,
+  small_platform_3_x = 9'd45,
+  small_platform_3_y = 9'd210, small_platform_4_x = 9'd270,
+  small_platform_5_x = 9'd110, small_platform_5_y = 9'd160,
+  small_platform_6_x = 9'd190, small_platform_7_x = 9'd160,
   small_platform_7_y = 9'd140, small_platform_8_x = 9'd80,
-  small_platform_8_y = 9'd100, small_platform_9_x = 9'd240,
+  small_platform_8_y = 9'd90, small_platform_9_x = 9'd240,
   small_platform_10_x = 9'd120, small_platform_10_y = 9'd80,
   small_platform_11_x = 9'd200, tower_x = 9'd8, tower_y = 9'd120,
   tower_lenght = 120, tower_width = 25, window_border_length = 320,
   window_border_width = 240, top_left_corner = 9'd0, top_right_corner = 9'd320,
   bottom_left_corner = 9'd240 , helicopter_x = 9'd240, helicopter_y = 9'd30;
+
+  initial
+    begin
+      platform_5_x = 9'd40;
+
+    end
+
 
   always @(posedge clock)
     begin
@@ -76,17 +84,6 @@ module background (flag, x_cord, y_cord, clock);
     // draw platform 5
     if ((x_cord >= platform_5_x && x_cord <= (platform_5_x + full_platform_length)) &&
         (y_cord >= platform_5_y && y_cord <= (platform_5_y + full_platform_width)))
-      colour = white;
-
-
-    // draw small platform 1
-    if ((x_cord >= small_platform_1_x && x_cord <= (small_platform_1_x + small_platform_length)) &&
-        (y_cord >= small_platform_1_y && (y_cord <= (small_platform_1_y + small_platform_width))))
-      colour = white;
-
-    // draw small platform 2
-    if ((x_cord >= small_platform_2_x && x_cord <= (small_platform_2_x + small_platform_length)) &&
-        (y_cord >= small_platform_1_y && (y_cord <= (small_platform_1_y + small_platform_width))))
       colour = white;
 
     // draw small platform 3
@@ -167,6 +164,31 @@ module background (flag, x_cord, y_cord, clock);
     if ((x_cord >= (helicopter_x - 5) && x_cord <= helicopter_x) &&
         (y_cord >= (helicopter_y + 10) && y_cord <= (helicopter_y + 20)))
       colour = 3'b110;
+
+    // draw the helicopter's front weapon
+    if ((x_cord >= (helicopter_x - 11) && x_cord <= (helicopter_x - 5)) &&
+        (y_cord >= (helicopter_y + 13) && y_cord <= (helicopter_y + 17)))
+      colour = 3'b110;
+
+    // draw the helicopters propeller base
+    if ((x_cord >= (helicopter_x + 10) && x_cord <= (helicopter_x + 14)) &&
+        (y_cord >= helicopter_y && y_cord <= (helicopter_y + 4)))
+      colour = 3'b110;
+
+    // draw the helicopters propeller
+    if ((x_cord >= (helicopter_x -3) && x_cord <= (helicopter_x + 29)) &&
+        (y_cord >= (helicopter_y + 4) && y_cord <= (helicopter_y + 7)))
+      colour = 3'b110;
+
+    // draw the helicopter's cabin base line
+    if ((x_cord >= helicopter_x && x_cord <= (helicopter_x + 20)) &&
+        (y_cord >= (helicopter_y + 10)))
+      colour = 3'b011;
+
+    // draw the helicopter's cabin window line
+    if ((x_cord >= helicopter_x + 10 &&
+        (y_cord >= helicopter_y && y_cord <= (helicopter_y + 10))))
+      colour = 3'b011;
 
     end
 
