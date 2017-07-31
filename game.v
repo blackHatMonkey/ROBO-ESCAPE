@@ -1,12 +1,13 @@
 `timescale 1ns / 1ns // `timescale time_unit/time_precision
 
-module game (CLOCK_50, KEY, SW, VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, VGA_R, VGA_G, VGA_B);
+module game (CLOCK_50, KEY, SW, LEDR, VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N, VGA_R, VGA_G, VGA_B);
 
 	//	50 MHz
 	input			CLOCK_50;
 	// TODO remove these after testing
 	input [3:0] KEY;
 	input [4:0] SW;
+	output [6:0] LEDR;
 
 	// VGA related
 	output VGA_CLK;
@@ -32,6 +33,6 @@ module game (CLOCK_50, KEY, SW, VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_N, VGA_SYNC_N
 	defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
 	defparam VGA.BACKGROUND_IMAGE = "black.mif";
 
-	draw d(x, y, colour, CLOCK_50, 9'd320, 9'd240, KEY[3:0]);
+	draw d(x, y, colour, CLOCK_50, 9'd320, 9'd240, KEY[3:0], LEDR[6:0]);
 
 endmodule
