@@ -55,18 +55,9 @@ module draw (x_out, y_out, colour_out, clock, max_x, max_y, key, led);
 
    end_goal eg(egflag, x_cord, y_cord, clock);
 
-   // TODO needs more testing for collosion
-   // collision between character and the projectile
-   //character projectile_collision(proj_collision, projectile_x_position, projectile_y_position, character_x_position, character_y_position, clock);
-
    // collision between character and the platforms
    collision_char_plat platform_collision(character_down, character_up, character_left, character_right, character_x_position, character_y_position, clock);
 
-   // collision between character and the traps
-   //collision_char_traps trap_collision_mod(character_down_trap, character_up_trap, character_left_trap, character_right_trap, character_x_position, character_y_position, clock);
-
-   // checks whether any of the hitboxes of the character overlaps with any of the traps. NOTE: It uses the same code as checking the platform collision so coming slightly close to the traps will reset the player position
-   //assign trap_collision = (character_down_trap | character_up_trap |  character_left_trap | character_right_trap);
 
    initial
      begin
