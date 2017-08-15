@@ -1,13 +1,15 @@
 # ROBO ESCAPE
 
 ## Introduction
-
-## Implementation
-
-## Lore
 ROBO 3121 was suddenly teleported to another dimenstion and the only way to get
 back to his world, Roboland, was to enter the wormhole located on the top
-platform. However his journey will not be easy as he must overcome multiple
+platform.
+
+## Demo
+[video](https://vimeo.com/227633872)
+
+## Lore
+However his journey will not be easy as he must overcome multiple
 challanges to get home. Underneath some of the platforms are spikes that were
 planted by the elven tribes. All though the elves were once peacefull they must
 protect themselves in this unkown world and so they planted the spikes and tip
