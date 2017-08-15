@@ -6,7 +6,7 @@ back to his world, Roboland, was to enter the wormhole located on the top
 platform.
 
 ## Demo
-[video](https://vimeo.com/227633872)
+A demo of the project lies [here](https://vimeo.com/227633872).
 
 ## Lore
 However his journey will not be easy as he must overcome multiple
@@ -25,3 +25,6 @@ move up and down and curse those elves. No one really knows anything about the
 wormhole and whether entering it will actually get you out or it could just kill you.
 That is why the elves scared of the idea decided to stay in this world rather than
 risking it.
+
+## License
+The license for the project is located in the LICENSE file.
